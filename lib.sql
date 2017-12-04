@@ -26,14 +26,6 @@ CREATE FUNCTION bag.contains(JSONb, text) RETURNS boolean AS $f$
   SELECT $1->>$2 IS NOT NULL;
 $f$ language SQL IMMUTABLE;
 
-/**
- * Scalar multiplication.  $2⊗$1.
- */
-CREATE FUNCTION bag.scaled_by(JSONb,int) RETURNS JSONb AS $f$
-  SELECT SUM((value#>>'{}')::int) FROM jsonb_each($1) a
-$f$ language SQL IMMUTABLE;
-
-
 
 /**
  * Returns an array of JSONb-bag representations as an element-multiplicity table.
@@ -46,6 +38,17 @@ $f$ language SQL IMMUTABLE;
 CREATE FUNCTION bag.j_as_t(JSONb) RETURNS SETOF bag.ref AS $f$
 	-- TO DO: must handle jsonb_typeof($1)='array'
   SELECT key, (value#>>'{}')::int FROM jsonb_each($1) a
+$f$ language SQL IMMUTABLE;
+
+
+/**
+ * Scalar multiplication.  $2⊗$1.
+ */
+CREATE FUNCTION bag.scaled_by(JSONb,int) RETURNS JSONb AS $f$
+	SELECT jsonb_object_agg(e,m)
+	FROM (
+		SELECT e, m * $2 AS m FROM bag.j_as_t($1)
+	) t
 $f$ language SQL IMMUTABLE;
 
 
