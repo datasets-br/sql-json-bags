@@ -10,9 +10,10 @@
  */
 
 DROP DOMAIN IF EXISTS jbag CASCADE;
-CREATE DOMAIN jbag AS JSONB
+CREATE DOMAIN jbag AS JSONb
   CHECK(  VALUE IS NULL OR  jsonb_typeof(VALUE) IN ('object','null')  )
 ;  -- empty bag is JSON-null, and SQL NULL is "undefined"
+-- NEED CREATE DOMAIN jbag[] AS JSONb[];
 
 CREATE TABLE jbag_ref (e text, m int); -- element and its multiplicity
 
@@ -68,7 +69,7 @@ $f$ language SQL IMMUTABLE;
  * Scalar multiplication.  $2⊗$1.
  */
 CREATE FUNCTION scaled_by(jbag,int) RETURNS jbag AS $f$
-	SELECT jsonb_object_agg(e,m)
+	SELECT jsonb_object_agg(e,m)::jbag
 	FROM (
 		SELECT e, m * $2 AS m FROM astable($1)
 	) t
@@ -77,7 +78,7 @@ $f$ language SQL IMMUTABLE;
 
 
 CREATE FUNCTION intersection(jbag[]) RETURNS jbag AS $f$
-	SELECT jsonb_object_agg(e,m)
+	SELECT jsonb_object_agg(e,m)::jbag
 	FROM (
 	  SELECT e, MIN(m) AS m
 		FROM astable($1)
@@ -87,7 +88,7 @@ CREATE FUNCTION intersection(jbag[]) RETURNS jbag AS $f$
 $f$ language SQL IMMUTABLE;
 
 CREATE FUNCTION union(jbag[]) RETURNS jbag AS $f$
-	SELECT jsonb_object_agg(e,m)
+	SELECT jsonb_object_agg(e,m)::jbag
 	FROM (
 	  SELECT e, MAX(m) AS m
 		FROM astable($1)
@@ -96,7 +97,7 @@ CREATE FUNCTION union(jbag[]) RETURNS jbag AS $f$
 $f$ language SQL IMMUTABLE;
 
 CREATE FUNCTION sum(jbag[]) RETURNS jbag AS $f$
-SELECT jsonb_object_agg(e,m)
+SELECT jsonb_object_agg(e,m)::jbag
 FROM (
   SELECT e, SUM(m) AS m
 	FROM astable($1)
@@ -119,7 +120,7 @@ $f$ language SQL IMMUTABLE;
  * $1 ∩ $2.
  */
 CREATE FUNCTION intersection(jbag,jbag) RETURNS jbag AS $f$
-	SELECT jsonb_object_agg(a.key, LEAST(a.value,b.value))
+	SELECT jsonb_object_agg( a.key, LEAST(a.value,b.value) )::jbag
 	FROM  jsonb_each($1) a(key,value), jsonb_each($2) b(key,value)
 	WHERE a.key=b.key
 $f$ language SQL IMMUTABLE;
@@ -139,7 +140,7 @@ $f$ language SQL IMMUTABLE;
  */
 CREATE FUNCTION union(jbag,jbag,boolean DEFAULT true) RETURNS jbag AS $f$
   -- or AS $wrap$ SELECT union(array[$1,$2]) $wrap$
-  SELECT jsonb_object_agg(key,v)
+  SELECT jsonb_object_agg( key, v )::jbag
   FROM (
 		SELECT key,  CASE WHEN $3 THEN MAX( (value#>>'{}')::int ) ELSE SUM( (value#>>'{}')::int ) END  as v
 		FROM (
