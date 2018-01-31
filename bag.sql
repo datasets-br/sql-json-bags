@@ -1,5 +1,12 @@
 /**
- * See original bag_as_schema.sql comments
+ * JSON-BAGS implemented as PUBLIC LIBRARY.
+ * (for SCHEMA LIB implementation see bag_as_schema.sql)
+ *
+ * Bags are multisets. The elementes are strings and the mutiplicity an positive non-zero integer.
+ * Here an implementation of basic operations like intersection, union, cardinality and multiset sum.
+ *
+ * See https://en.wikipedia.org/wiki/Multiset and https://doi.org/10.1080/03081078608934952
+ * See typical operations at https://en.wikipedia.org/wiki/Set_(abstract_data_type)#Multiset
  */
 
 DROP DOMAIN IF EXISTS jbag CASCADE;

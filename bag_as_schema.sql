@@ -1,4 +1,7 @@
 /**
+ * JSON-BAGS implemented as SCHEMA LIBRARY.
+ * (for PUBLIC LIB implementation see bag.sql)
+ *
  * Bags are multisets. The elementes are strings and the mutiplicity an positive non-zero integer.
  * Here an implementation of basic operations like intersection, union, cardinality and multiset sum.
  *
