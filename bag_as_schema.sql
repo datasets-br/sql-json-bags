@@ -9,6 +9,26 @@
 DROP SCHEMA IF EXISTS bag CASCADE;
 CREATE SCHEMA bag;
 
+CREATE DOMAIN jbag AS JSONB
+  CHECK(  VALUE IS NULL OR  jsonb_typeof(VALUE) IN ('object','null')  )
+;  -- empty bag is JSON-null, and SQL NULL is "undefined"
+
+CREATE or replace FUNCTION bag.valid(
+  jbag
+  ,p_not_emp boolean DEFAULT false
+  ,p_no_digits boolean DEFAULT false
+  ,p_lower boolean DEFAULT false
+) RETURNS boolean AS $f$
+  SELECT bool_and(    -- key condictions
+    (NOT(p_not_emp) OR key!='') AND
+    (NOT(p_no_digits) OR key~* '[a-z]') AND
+    (NOT(p_lower) OR key=lower(key))
+    AND             -- multiplicity condictions:
+    jsonb_typeof(value)='number' AND vtext~'^\d+$' AND vtext::int>0
+  )
+  FROM (select *, value::text as vtext, jsonb_typeof(value) FROM jsonb_each($1)) t
+$f$ language SQL IMMUTABLE;
+
 
 CREATE TABLE bag.ref (e text, m int);
 
