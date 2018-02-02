@@ -1,0 +1,2 @@
+-- Two flavors: bag_as_domain.sql  or bag_as_schema.sql
+-- Prefer bag_as_schema.sql
